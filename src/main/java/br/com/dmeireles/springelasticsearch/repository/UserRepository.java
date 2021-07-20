@@ -1,18 +1,22 @@
 package br.com.dmeireles.springelasticsearch.repository;
 
 import br.com.dmeireles.springelasticsearch.model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
-import java.util.List;
+import java.util.Optional;
 
 public interface UserRepository extends ElasticsearchRepository<User, String> {
 
-    List<User> findByName(String name);
+    Page<User> findByName(String name, Pageable pagination);
 
-    List<User> findByNameContaining(String nameContaining);
+    Page<User> findByNameContaining(String nameContaining, Pageable pagination);
 
-    List<User> findByEmail(String email);
+    Page<User> findByEmail(String email, Pageable pagination);
 
-    List<User> findByEmailContaining(String emailContaining);
+    Page<User> findByEmailContaining(String emailContaining, Pageable pagination);
+
+   Optional<User> findByEmail(String email);
 
 }
