@@ -17,6 +17,6 @@ public interface UserRepository extends ElasticsearchRepository<User, String> {
 
     Page<User> findByEmailContaining(String emailContaining, Pageable pagination);
 
-   Optional<User> findByEmail(String email);
+    Optional<User> findByEmail(String email);
 
 }
