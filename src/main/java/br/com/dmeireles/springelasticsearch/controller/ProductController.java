@@ -1,10 +1,12 @@
 package br.com.dmeireles.springelasticsearch.controller;
 
 import br.com.dmeireles.springelasticsearch.controller.dto.ProductDTO;
+import br.com.dmeireles.springelasticsearch.controller.dto.search.SearchQueryDTO;
 import br.com.dmeireles.springelasticsearch.controller.form.ProductForm;
 import br.com.dmeireles.springelasticsearch.model.Product;
 import br.com.dmeireles.springelasticsearch.repository.ProductRepository;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,6 +48,16 @@ public class ProductController {
             return ResponseEntity.created(uri).body(status);
         } catch (IOException e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<SearchHits> searchProduct(@RequestBody SearchQueryDTO searchQueryDTO) {
+        try {
+            SearchHits search = productRepository.search(searchQueryDTO).getHits();
+            return ResponseEntity.ok(search);
+        } catch (IOException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 
