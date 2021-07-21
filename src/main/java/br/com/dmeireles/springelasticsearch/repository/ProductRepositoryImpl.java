@@ -13,6 +13,8 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -43,6 +45,15 @@ public class ProductRepositoryImpl implements ProductRepository {
                 .id(product.getId())
                 .source(convertProductToMap(product));
         return restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
+    }
+
+    @Override
+    public UpdateResponse update(Product product) throws IOException {
+        UpdateRequest updateRequest = new UpdateRequest()
+                .index("product")
+                .id(product.getId())
+                .doc(convertProductToMap(product));
+        return restHighLevelClient.update(updateRequest, RequestOptions.DEFAULT);
     }
 
     @Override

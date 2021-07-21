@@ -9,10 +9,7 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.validation.Valid;
@@ -32,6 +29,19 @@ public class ProductController {
         try {
             Product product = productForm.converter();
             productRepository.save(product);
+
+            URI uri = uriBuilder.path("/product/{id}").buildAndExpand(product.getId()).toUri();
+            return ResponseEntity.created(uri).body(new ProductDTO(product));
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping
+    public ResponseEntity<ProductDTO> update(@RequestBody @Valid ProductForm productForm, UriComponentsBuilder uriBuilder) {
+        try {
+            Product product = productForm.converter();
+            productRepository.update(product);
 
             URI uri = uriBuilder.path("/product/{id}").buildAndExpand(product.getId()).toUri();
             return ResponseEntity.created(uri).body(new ProductDTO(product));

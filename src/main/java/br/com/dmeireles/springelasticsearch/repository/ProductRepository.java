@@ -6,6 +6,7 @@ import br.com.dmeireles.springelasticsearch.model.Product;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateResponse;
 
 import java.io.IOException;
 import java.util.List;
@@ -13,6 +14,8 @@ import java.util.List;
 public interface ProductRepository {
 
     IndexResponse save(Product product) throws IOException;
+
+    public UpdateResponse update(Product product) throws IOException;
 
     BulkResponse saveAll(List<ProductForm> products) throws IOException;
 
