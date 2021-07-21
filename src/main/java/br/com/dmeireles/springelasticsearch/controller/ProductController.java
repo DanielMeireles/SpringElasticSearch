@@ -50,7 +50,7 @@ public class ProductController {
         }
     }
 
-    @PostMapping("/bulk")
+    @PostMapping("/bulkInsert")
     public ResponseEntity<RestStatus> registerProducts(@RequestBody List<@Valid ProductForm> products, UriComponentsBuilder uriBuilder) {
         try {
             RestStatus status = productRepository.saveAll(products).status();
@@ -59,6 +59,11 @@ public class ProductController {
         } catch (IOException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @PutMapping("/bulkUpdate")
+    public ResponseEntity<RestStatus> updateProducts(@RequestBody List<@Valid ProductForm> products, UriComponentsBuilder uriBuilder) {
+        return registerProducts(products, uriBuilder);
     }
 
     @PostMapping("/search")
