@@ -6,6 +6,7 @@ import br.com.dmeireles.springelasticsearch.controller.dto.search.SearchQueryDTO
 import br.com.dmeireles.springelasticsearch.controller.form.ProductForm;
 import br.com.dmeireles.springelasticsearch.model.Product;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -38,10 +39,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Autowired
     ObjectMapper objectMapper;
 
+    private static final String INDEX = "product";
+
     @Override
     public IndexResponse save(Product product) throws IOException {
         IndexRequest indexRequest = Requests
-                .indexRequest("product")
+                .indexRequest(INDEX)
                 .id(product.getId())
                 .source(convertProductToMap(product));
         return restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
@@ -50,7 +53,7 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public UpdateResponse update(Product product) throws IOException {
         UpdateRequest updateRequest = new UpdateRequest()
-                .index("product")
+                .index(INDEX)
                 .id(product.getId())
                 .doc(convertProductToMap(product));
         return restHighLevelClient.update(updateRequest, RequestOptions.DEFAULT);
@@ -61,7 +64,7 @@ public class ProductRepositoryImpl implements ProductRepository {
         BulkRequest bulkRequest = Requests.bulkRequest();
         productsForm.forEach(productForm -> {
             IndexRequest indexRequest = Requests
-                    .indexRequest("product")
+                    .indexRequest(INDEX)
                     .id(productForm.converter().getId())
                     .source(convertProductToMap(productForm.converter()));
             bulkRequest.add(indexRequest);
@@ -71,67 +74,75 @@ public class ProductRepositoryImpl implements ProductRepository {
 
     @Override
     public SearchResponse search(SearchQueryDTO searchQuery) throws IOException {
-        SearchRequest searchRequest = Requests.searchRequest("product");
+        SearchRequest searchRequest = Requests.searchRequest(INDEX);
+        BoolQueryBuilder boolQueryBuilder = createBoolQuery(searchQuery);
+        this.facedQuery(searchQuery, boolQueryBuilder);
+        SearchSourceBuilder searchSourceBuilder = createPagination(searchQuery, boolQueryBuilder);
+        searchRequest.source(searchSourceBuilder);
+        return restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+    }
 
-        // boolean query
-        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery()
+    private BoolQueryBuilder createBoolQuery(SearchQueryDTO searchQuery) {
+        return QueryBuilders.boolQuery()
                 .should(QueryBuilders.matchQuery("id", searchQuery.getQuery()))
                 .should(QueryBuilders.matchQuery("name", searchQuery.getQuery()))
                 .should(QueryBuilders.matchQuery("description", searchQuery.getQuery()))
                 .should(QueryBuilders.matchQuery("category", searchQuery.getQuery()));
+    }
 
-
-        // facet query
+    private void facedQuery(SearchQueryDTO searchQuery, BoolQueryBuilder boolQueryBuilder) {
         if (searchQuery.getFilter() != null) {
             FilterRequestDTO filter = searchQuery.getFilter();
-            if (filter.getRange() != null) {
-                for (String keyToFilter : filter.getRange().keySet()) {
-                    RangeFilterDTO valueToFilter = filter.getRange().get(keyToFilter);
-
-                    RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery(keyToFilter);
-
-                    if (valueToFilter.getLte() != null) {
-                        rangeQueryBuilder.lte(valueToFilter.getLte());
-                    }
-
-                    if (valueToFilter.getLt() != null) {
-                        rangeQueryBuilder.lt(valueToFilter.getLt());
-                    }
-
-                    if (valueToFilter.getGt() != null) {
-                        rangeQueryBuilder.gt(valueToFilter.getGt());
-                    }
-
-                    if (valueToFilter.getGte() != null) {
-                        rangeQueryBuilder.gte(valueToFilter.getGte());
-                    }
-
-                    boolQueryBuilder.filter(rangeQueryBuilder);
-                }
-
-            } else if (filter.getMatch() != null) {
-                for (String keyToFilter : filter.getMatch().keySet()) {
-                    Object valueToFilter = filter.getMatch().get(keyToFilter).toString().toLowerCase();
-
-                    boolQueryBuilder.filter(QueryBuilders.termQuery(keyToFilter, valueToFilter));
-                }
-            }
+            this.createRangeFilter(filter, boolQueryBuilder);
+            this.createMatchFilter(filter, boolQueryBuilder);
         }
+    }
 
-        // pagination
-        SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource()
+    private void createRangeFilter(FilterRequestDTO filter, BoolQueryBuilder boolQueryBuilder) {
+        if (filter.getRange() != null) {
+            filter.getRange().keySet().forEach(keyToFilter -> {
+                RangeFilterDTO valueToFilter = filter.getRange().get(keyToFilter);
+
+                RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery(keyToFilter);
+
+                if (valueToFilter.getLte() != null)
+                    rangeQueryBuilder.lte(valueToFilter.getLte());
+
+                if (valueToFilter.getLt() != null)
+                    rangeQueryBuilder.lt(valueToFilter.getLt());
+
+                if (valueToFilter.getGt() != null)
+                    rangeQueryBuilder.gt(valueToFilter.getGt());
+
+                if (valueToFilter.getGte() != null)
+                    rangeQueryBuilder.gte(valueToFilter.getGte());
+
+                boolQueryBuilder.filter(rangeQueryBuilder);
+            });
+
+        }
+    }
+
+    private void createMatchFilter(FilterRequestDTO filter, BoolQueryBuilder boolQueryBuilder) {
+        if (filter.getMatch() != null) {
+            filter.getMatch().keySet().forEach(keyToFilter -> {
+                Object valueToFilter = filter.getMatch().get(keyToFilter).toString().toLowerCase();
+                boolQueryBuilder.filter(QueryBuilders.termQuery(keyToFilter, valueToFilter));
+            });
+        }
+    }
+
+    private SearchSourceBuilder createPagination(SearchQueryDTO searchQuery, BoolQueryBuilder boolQueryBuilder) {
+        return SearchSourceBuilder.searchSource()
                 .from(searchQuery.getPage() * searchQuery.getSize())
                 .size(searchQuery.getSize())
                 .query(boolQueryBuilder);
-
-        searchRequest.source(searchSourceBuilder);
-        return restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
     }
 
     private Map<String, Object> convertProductToMap(Product product) {
         try {
             String json = objectMapper.writeValueAsString(product);
-            return objectMapper.readValue(json, Map.class);
+            return objectMapper.readValue(json, new TypeReference<Map<String, Object>>(){});
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return null;
