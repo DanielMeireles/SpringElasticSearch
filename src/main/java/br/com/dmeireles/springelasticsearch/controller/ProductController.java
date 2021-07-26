@@ -5,9 +5,11 @@ import br.com.dmeireles.springelasticsearch.controller.dto.search.SearchQueryDTO
 import br.com.dmeireles.springelasticsearch.controller.form.ProductForm;
 import br.com.dmeireles.springelasticsearch.model.Product;
 import br.com.dmeireles.springelasticsearch.repository.ProductRepository;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -25,7 +27,8 @@ public class ProductController {
     ProductRepository productRepository;
 
     @PostMapping
-    public ResponseEntity<ProductDTO> register(@RequestBody @Valid ProductForm productForm, UriComponentsBuilder uriBuilder) {
+    public ResponseEntity<ProductDTO> register(@RequestBody @Valid ProductForm productForm,
+                                               UriComponentsBuilder uriBuilder) {
         try {
             Product product = productForm.converter();
             productRepository.save(product);
@@ -38,7 +41,8 @@ public class ProductController {
     }
 
     @PutMapping
-    public ResponseEntity<ProductDTO> update(@RequestBody @Valid ProductForm productForm, UriComponentsBuilder uriBuilder) {
+    public ResponseEntity<ProductDTO> update(@RequestBody @Valid ProductForm productForm,
+                                             UriComponentsBuilder uriBuilder) {
         try {
             Product product = productForm.converter();
             productRepository.update(product);
@@ -51,7 +55,8 @@ public class ProductController {
     }
 
     @PostMapping("/bulkInsert")
-    public ResponseEntity<RestStatus> registerProducts(@RequestBody List<@Valid ProductForm> products, UriComponentsBuilder uriBuilder) {
+    public ResponseEntity<RestStatus> registerProducts(@RequestBody List<@Valid ProductForm> products,
+                                                       UriComponentsBuilder uriBuilder) {
         try {
             RestStatus status = productRepository.saveAll(products).status();
             URI uri = uriBuilder.path("/product").build().toUri();
@@ -62,14 +67,26 @@ public class ProductController {
     }
 
     @PutMapping("/bulkUpdate")
-    public ResponseEntity<RestStatus> updateProducts(@RequestBody List<@Valid ProductForm> products, UriComponentsBuilder uriBuilder) {
+    public ResponseEntity<RestStatus> updateProducts(@RequestBody List<@Valid ProductForm> products,
+                                                     UriComponentsBuilder uriBuilder) {
         return registerProducts(products, uriBuilder);
     }
 
     @PostMapping("/search")
-    public ResponseEntity<SearchHits> searchProduct(@RequestBody SearchQueryDTO searchQueryDTO) {
+    public ResponseEntity<SearchResponse> searchProduct(@RequestBody SearchQueryDTO searchQueryDTO) {
         try {
-            SearchHits search = productRepository.search(searchQueryDTO).getHits();
+            SearchResponse search = productRepository.search(searchQueryDTO);
+            return ResponseEntity.ok(search);
+        } catch (IOException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<SearchResponse> searchProductByName(@RequestParam(required = true) String name,
+                                                        @PageableDefault(page = 0, size = 10) Pageable pagination) {
+        try {
+            SearchResponse search = productRepository.searchByName(name, pagination);
             return ResponseEntity.ok(search);
         } catch (IOException e) {
             return ResponseEntity.notFound().build();

@@ -24,6 +24,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -70,6 +71,19 @@ public class ProductRepositoryImpl implements ProductRepository {
             bulkRequest.add(indexRequest);
         });
         return restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+    }
+
+    @Override
+    public SearchResponse searchByName(String name, Pageable pagination) throws IOException {
+        SearchRequest searchRequest = Requests.searchRequest(INDEX);
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+        boolQueryBuilder.filter(QueryBuilders.termQuery("name", name));
+        SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource()
+                .from(pagination.getPageNumber())
+                .size(pagination.getPageSize())
+                .query(boolQueryBuilder);
+        searchRequest.source(searchSourceBuilder);
+        return restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
     }
 
     @Override
