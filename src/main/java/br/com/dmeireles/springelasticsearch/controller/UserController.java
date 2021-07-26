@@ -43,6 +43,12 @@ public class UserController {
 
     }
 
+    @GetMapping("/SearchByName")
+    public Page<UserDTO> list(@RequestParam(required = true) String name,
+                              @PageableDefault(page = 0, size = 10) Pageable pagination) {
+            return UserDTO.converter(userRepository.findByName(name, pagination));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UserDTO> detail(@PathVariable String id) {
         Optional<User> user = userRepository.findById(id);
