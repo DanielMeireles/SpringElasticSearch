@@ -84,8 +84,18 @@ public class ProductController {
         }
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<SearchResponse> searchAllProducts(@PageableDefault(page = 0, size = 10) Pageable pagination) {
+        try {
+            SearchResponse search = productRepository.searchAll(pagination);
+            return ResponseEntity.ok(search);
+        } catch (IOException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping
-    public ResponseEntity<SearchResponse> searchProductByName(@RequestParam(required = true) String name,
+    public ResponseEntity<SearchResponse> searchProductsByName(@RequestParam(required = true) String name,
                                                         @PageableDefault(page = 0, size = 10) Pageable pagination) {
         try {
             SearchResponse search = productRepository.searchByName(name, pagination);

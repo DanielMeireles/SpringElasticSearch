@@ -21,6 +21,8 @@ public interface ProductRepository {
 
     BulkResponse saveAll(List<CreateProductForm> products) throws IOException;
 
+    SearchResponse searchAll(Pageable pagination) throws IOException;
+
     SearchResponse searchByName(String name, Pageable pagination) throws IOException;
 
     SearchResponse search(SearchQueryDTO searchQueryDTO) throws IOException;

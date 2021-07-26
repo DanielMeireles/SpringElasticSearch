@@ -76,6 +76,18 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
+    public SearchResponse searchAll(Pageable pagination) throws IOException {
+        SearchRequest searchRequest = Requests.searchRequest(INDEX);
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+        SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource()
+                .from(pagination.getPageNumber())
+                .size(pagination.getPageSize())
+                .query(boolQueryBuilder);
+        searchRequest.source(searchSourceBuilder);
+        return restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+    }
+
+    @Override
     public SearchResponse searchByName(String name, Pageable pagination) throws IOException {
         SearchRequest searchRequest = Requests.searchRequest(INDEX);
         BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
