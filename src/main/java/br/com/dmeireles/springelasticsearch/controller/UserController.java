@@ -1,7 +1,8 @@
 package br.com.dmeireles.springelasticsearch.controller;
 
 import br.com.dmeireles.springelasticsearch.controller.dto.UserDTO;
-import br.com.dmeireles.springelasticsearch.controller.form.UserForm;
+import br.com.dmeireles.springelasticsearch.controller.form.CreateUserForm;
+import br.com.dmeireles.springelasticsearch.controller.form.UpdateUserForm;
 import br.com.dmeireles.springelasticsearch.model.User;
 import br.com.dmeireles.springelasticsearch.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,8 +60,8 @@ public class UserController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<UserDTO> register(@RequestBody @Valid UserForm userForm, UriComponentsBuilder uriBuilder) {
-        User user = userForm.converter(userRepository);
+    public ResponseEntity<UserDTO> register(@RequestBody @Valid CreateUserForm createUserForm, UriComponentsBuilder uriBuilder) {
+        User user = createUserForm.converter(userRepository);
         userRepository.save(user);
 
         URI uri = uriBuilder.path("/user/{id}").buildAndExpand(user.getId()).toUri();
@@ -69,10 +70,10 @@ public class UserController {
 
     @PutMapping("/{id}")
     @Transactional
-    public ResponseEntity<UserDTO> update(@PathVariable String id, @RequestBody @Valid UserForm userForm) {
+    public ResponseEntity<UserDTO> update(@PathVariable String id, @RequestBody @Valid UpdateUserForm updateUserForm) {
         Optional<User> optional = userRepository.findById(id);
         if (optional.isPresent()) {
-            User user = userForm.update(id, userRepository);
+            User user = updateUserForm.update(id, userRepository);
             return ResponseEntity.ok(new UserDTO(user));
         }
         return ResponseEntity.notFound().build();

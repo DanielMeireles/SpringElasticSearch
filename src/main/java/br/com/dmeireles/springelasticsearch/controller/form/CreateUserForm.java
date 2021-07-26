@@ -10,7 +10,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Optional;
 
-public class UserForm {
+public class CreateUserForm {
 
     @Setter @NotNull @NotEmpty @Size(min = 5)
     private String name;
