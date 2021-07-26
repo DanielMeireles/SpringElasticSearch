@@ -2,7 +2,8 @@ package br.com.dmeireles.springelasticsearch.controller;
 
 import br.com.dmeireles.springelasticsearch.controller.dto.ProductDTO;
 import br.com.dmeireles.springelasticsearch.controller.dto.search.SearchQueryDTO;
-import br.com.dmeireles.springelasticsearch.controller.form.ProductForm;
+import br.com.dmeireles.springelasticsearch.controller.form.CreateProductForm;
+import br.com.dmeireles.springelasticsearch.controller.form.UpdateProductForm;
 import br.com.dmeireles.springelasticsearch.model.Product;
 import br.com.dmeireles.springelasticsearch.repository.ProductRepository;
 import org.elasticsearch.action.search.SearchResponse;
@@ -27,10 +28,10 @@ public class ProductController {
     ProductRepository productRepository;
 
     @PostMapping
-    public ResponseEntity<ProductDTO> register(@RequestBody @Valid ProductForm productForm,
+    public ResponseEntity<ProductDTO> register(@RequestBody @Valid CreateProductForm createProductForm,
                                                UriComponentsBuilder uriBuilder) {
         try {
-            Product product = productForm.converter();
+            Product product = createProductForm.converter();
             productRepository.save(product);
 
             URI uri = uriBuilder.path("/product/{id}").buildAndExpand(product.getId()).toUri();
@@ -40,11 +41,12 @@ public class ProductController {
         }
     }
 
-    @PutMapping
-    public ResponseEntity<ProductDTO> update(@RequestBody @Valid ProductForm productForm,
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductDTO> update(@PathVariable String id,
+                                             @RequestBody @Valid UpdateProductForm updateProductForm,
                                              UriComponentsBuilder uriBuilder) {
         try {
-            Product product = productForm.converter();
+            Product product = updateProductForm.update(id);
             productRepository.update(product);
 
             URI uri = uriBuilder.path("/product/{id}").buildAndExpand(product.getId()).toUri();
@@ -55,7 +57,7 @@ public class ProductController {
     }
 
     @PostMapping("/bulkInsert")
-    public ResponseEntity<RestStatus> registerProducts(@RequestBody List<@Valid ProductForm> products,
+    public ResponseEntity<RestStatus> registerProducts(@RequestBody List<@Valid CreateProductForm> products,
                                                        UriComponentsBuilder uriBuilder) {
         try {
             RestStatus status = productRepository.saveAll(products).status();
@@ -67,7 +69,7 @@ public class ProductController {
     }
 
     @PutMapping("/bulkUpdate")
-    public ResponseEntity<RestStatus> updateProducts(@RequestBody List<@Valid ProductForm> products,
+    public ResponseEntity<RestStatus> updateProducts(@RequestBody List<@Valid CreateProductForm> products,
                                                      UriComponentsBuilder uriBuilder) {
         return registerProducts(products, uriBuilder);
     }

@@ -3,8 +3,9 @@ package br.com.dmeireles.springelasticsearch.repository;
 import br.com.dmeireles.springelasticsearch.controller.dto.search.FilterRequestDTO;
 import br.com.dmeireles.springelasticsearch.controller.dto.search.RangeFilterDTO;
 import br.com.dmeireles.springelasticsearch.controller.dto.search.SearchQueryDTO;
-import br.com.dmeireles.springelasticsearch.controller.form.ProductForm;
+import br.com.dmeireles.springelasticsearch.controller.form.CreateProductForm;
 import br.com.dmeireles.springelasticsearch.model.Product;
+import br.com.dmeireles.springelasticsearch.model.User;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Repository;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Repository
 public class ProductRepositoryImpl implements ProductRepository {
@@ -61,13 +63,13 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public BulkResponse saveAll(List<ProductForm> productsForm) throws IOException {
+    public BulkResponse saveAll(List<CreateProductForm> productsForm) throws IOException {
         BulkRequest bulkRequest = Requests.bulkRequest();
-        productsForm.forEach(productForm -> {
+        productsForm.forEach(createProductForm -> {
             IndexRequest indexRequest = Requests
                     .indexRequest(INDEX)
-                    .id(productForm.converter().getId())
-                    .source(convertProductToMap(productForm.converter()));
+                    .id(createProductForm.converter().getId())
+                    .source(convertProductToMap(createProductForm.converter()));
             bulkRequest.add(indexRequest);
         });
         return restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
